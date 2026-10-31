@@ -58,23 +58,23 @@
         "20000"
     ],
     "machine_max_acceleration_extruding": [
-        "15000",
+        "12000",
         "1250"
     ],
     "machine_max_acceleration_retracting": [
-        "15000",
+        "12000",
         "1250"
     ],
     "machine_max_acceleration_travel": [
-        "1500",
+        "12000",
         "1250"
     ],
     "machine_max_acceleration_x": [
-        "15000",
+        "12000",
         "960"
     ],
     "machine_max_acceleration_y": [
-        "15000",
+        "12000",
         "960"
     ],
     "machine_max_acceleration_z": [
@@ -155,7 +155,7 @@
     ],
     "printable_height": "350",
     "printer_model": "Sovol SV07 Plus",
-    "printer_notes": "",
+    "printer_notes": "KAMP: requires KAMP_Settings.cfg + [exclude_object] on printer and moonraker [file_manager] enable_object_processing: True",
     "printer_settings_id": "Sovol SV07 Plus 0.4 nozzle Optimized",
     "printer_structure": "undefine",
     "printer_technology": "FFF",

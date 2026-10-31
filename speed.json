@@ -3,6 +3,7 @@
     "bridge_flow": "0.95",
     "default_acceleration": "3400",
     "elefant_foot_compensation": "0.1",
+    "exclude_object": "1",
     "from": "User",
     "inherits": "0.20mm Standard @Sovol SV07 Plus",
     "initial_layer_line_width": "0.5",

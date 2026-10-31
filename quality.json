@@ -5,6 +5,7 @@
     "brim_type": "no_brim",
     "default_acceleration": "1500",
     "elefant_foot_compensation": "0.1",
+    "exclude_object": "1",
     "from": "User",
     "inherits": "0.20mm Standard @Sovol SV07 Plus",
     "initial_layer_infill_speed": "50",

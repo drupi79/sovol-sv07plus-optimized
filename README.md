@@ -29,6 +29,7 @@
 | File | Description |
 |------|-------------|
 | `printer.cfg` | Optimized Klipper configuration |
+| `KAMP_Settings.cfg` | KAMP (Klipper Adaptive Meshing & Purging) settings — adaptive mesh, LINE_PURGE, Smart_Park |
 | `printer_profile.json` | OrcaSlicer printer profile |
 | `quality.json` | Quality process profile (slow, detailed) |
 | `balanced.json` | Balanced process profile (default) |
@@ -57,9 +58,11 @@
 - Homes all axes (`G28`)
 - Runs `Z_TILT_ADJUST` to level dual Z leadscrews
 - Re-homes Z after tilt correction
+- Pre-warms the nozzle to 150°C (below ooze temperature) while the bed heats
 - Waits for bed temperature
-- Runs `BED_MESH_CALIBRATE` (fresh probe mesh every print)
-- Moves to purge position, heats extruder, runs purge line
+- Runs `BED_MESH_CALIBRATE` — **KAMP adaptive mesh**, probes only the area the print covers
+- `Smart_Park` (KAMP) — parks near the print for final nozzle heating
+- Heats extruder, then `LINE_PURGE` (KAMP) — adaptive purge line just in front of the print
 - OrcaSlicer start gcode: `PRINT_START EXTRUDER_TEMP=[nozzle_temperature_initial_layer] BED_TEMP=[bed_temperature_initial_layer_single]`
 
 **PRINT_END** (replaces the minimal original):
@@ -99,6 +102,7 @@
 - `machine_start_gcode` changed from inline heating + `START_PRINT` to:
   `PRINT_START EXTRUDER_TEMP=[nozzle_temperature_initial_layer] BED_TEMP=[bed_temperature_initial_layer_single]`
 - `machine_end_gcode` changed to: `PRINT_END`
+- Machine acceleration limits set to 12000 mm/s² to match `printer.cfg` `max_accel`. OrcaSlicer emits these limits into the G-code, so the previous 15000 would override the printer's limit, and the old 1500 travel limit was clamping every profile's travel acceleration.
 
 ### Process Profiles
 
@@ -111,6 +115,8 @@ Four profiles are included, all with `bridge_flow: 0.95`, `elefant_foot_compensa
 | Speed | 3400 mm/s² | 3000 mm/s² | — | 2 |
 | Print-in-place | 800 mm/s² | 600 mm/s² | 30 mm/s | 4 |
 
+All four profiles enable **Label Objects** (`exclude_object: 1`). The stock Sovol SV07 Plus process profile ships with this **off** — without it the G-code has no object outlines and KAMP silently falls back to a full-bed mesh.
+
 The print-in-place profile additionally enables `precise_outer_wall`, seam slope smoothing, aligned seam, outer brim, and slow overhang speeds.
 
 > **Note:** The process profiles use `"inherits": "0.20mm Standard @Sovol SV07 Plus"` — you must have the Sovol SV07 Plus profiles installed in OrcaSlicer for the inheritance to resolve correctly. Install them from OrcaSlicer's built-in printer marketplace if needed.
@@ -119,15 +125,38 @@ The print-in-place profile additionally enables `precise_outer_wall`, seam slope
 
 ## How to Deploy
 
+### SSH Access
+
+The stock Sovol image accepts SSH with user **`mks`**, password **`makerbase`**:
+```bash
+ssh mks@<your-printer-ip>
+```
+
+### KAMP (install first)
+
+`printer.cfg` includes `KAMP_Settings.cfg`, so **Klipper will not start until KAMP is installed.**
+
+1. Check your Klipper version: `cd ~/klipper && git describe --tags` — v0.11 or newer is required for `[exclude_object]`.
+2. Install KAMP:
+   ```bash
+   cd ~ && git clone https://github.com/kyleisah/Klipper-Adaptive-Meshing-Purging.git
+   ln -s ~/Klipper-Adaptive-Meshing-Purging/Configuration ~/printer_data/config/KAMP
+   ```
+3. Add to `~/printer_data/config/moonraker.conf` and restart Moonraker:
+   ```ini
+   [file_manager]
+   enable_object_processing: True
+   ```
+
 ### Klipper (printer.cfg)
 
 1. **Back up your existing config first:**
    ```
    cp ~/printer_data/config/printer.cfg ~/printer_data/config/printer.cfg.backup
    ```
-2. Copy `printer.cfg` to your Pi:
+2. Copy `printer.cfg` and `KAMP_Settings.cfg` to the printer:
    ```bash
-   scp printer.cfg pi@<your-printer-ip>:~/printer_data/config/
+   scp printer.cfg KAMP_Settings.cfg mks@<your-printer-ip>:~/printer_data/config/
    ```
 3. Restart Klipper via Mainsail or:
    ```bash
@@ -149,6 +178,7 @@ The print-in-place profile additionally enables `precise_outer_wall`, seam slope
 3. Import each process profile (`quality.json`, `balanced.json`, `speed.json`, `print_in_place.json`)
 4. Select **"Sovol SV07 Plus 0.4 nozzle Optimized"** as your printer
 5. Start with the **Balanced** profile for your first print
+6. On the first print, the console should show KAMP output with a mesh sized to the print, not the whole bed
 
 ---
 
